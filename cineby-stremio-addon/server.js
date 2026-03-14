@@ -1,7 +1,7 @@
 const { addonBuilder, serveHTTP } = require("stremio-addon-sdk")
 const https = require("https")
 
-const TMDB_API_KEY = "PASTE_YOUR_TMDB_API_KEY_HERE"
+const TMDB_API_KEY = "e4598ac9cb6d28883dac12852c670c5a"
 
 const manifest = {
     id: "org.cineby.vidking",
