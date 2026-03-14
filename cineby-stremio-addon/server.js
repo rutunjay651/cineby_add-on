@@ -1,90 +1,97 @@
-const { addonBuilder, serveHTTP } = require("stremio-addon-sdk")
+const { addonBuilder } = require("stremio-addon-sdk")
+const http = require("http")
 const https = require("https")
 
 const TMDB_API_KEY = "e4598ac9cb6d28883dac12852c670c5a"
 
 const manifest = {
-    id: "org.cineby.vidking",
-    version: "1.0.0",
-    name: "Cineby",
-    description: "Watch movies and series from Cineby",
-    resources: ["stream"],
-    types: ["movie", "series"],
-    idPrefixes: ["tt"]
+  id: "org.cineby.vidking",
+  version: "1.0.0",
+  name: "Cineby",
+  description: "Watch movies and series from Cineby",
+  resources: ["stream"],
+  types: ["movie", "series"],
+  idPrefixes: ["tt"],
+  catalogs: []   // REQUIRED by Stremio
 }
 
 const builder = new addonBuilder(manifest)
 
-function imdbToTmdb(imdbId) {
-    return new Promise((resolve, reject) => {
+function imdbToTmdb(imdb) {
+  return new Promise((resolve) => {
 
-        const url = `https://api.themoviedb.org/3/find/${imdbId}?api_key=${TMDB_API_KEY}&external_source=imdb_id`
+    const url =
+      "https://api.themoviedb.org/3/find/" +
+      imdb +
+      "?api_key=" +
+      TMDB_API_KEY +
+      "&external_source=imdb_id"
 
-        https.get(url, (res) => {
+    https.get(url, (res) => {
 
-            let data = ""
+      let data = ""
 
-            res.on("data", chunk => data += chunk)
+      res.on("data", (chunk) => (data += chunk))
 
-            res.on("end", () => {
-                try {
-                    const json = JSON.parse(data)
+      res.on("end", () => {
 
-                    if (json.movie_results && json.movie_results.length > 0)
-                        resolve(json.movie_results[0].id)
+        try {
+          const json = JSON.parse(data)
 
-                    else if (json.tv_results && json.tv_results.length > 0)
-                        resolve(json.tv_results[0].id)
+          if (json.movie_results.length)
+            return resolve(json.movie_results[0].id)
 
-                    else
-                        resolve(null)
+          if (json.tv_results.length)
+            return resolve(json.tv_results[0].id)
 
-                } catch (err) {
-                    resolve(null)
-                }
-            })
+        } catch (e) {}
 
-        }).on("error", () => resolve(null))
-
+        resolve(null)
+      })
     })
+  })
 }
 
 builder.defineStreamHandler(async ({ type, id }) => {
 
-    const imdbId = id.split(":")[0]
+  const imdb = id.split(":")[0]
+  const tmdb = await imdbToTmdb(imdb)
 
-    const tmdbId = await imdbToTmdb(imdbId)
+  if (!tmdb) return { streams: [] }
 
-    if (!tmdbId)
-        return { streams: [] }
+  let url
 
-    let streamUrl
+  if (type === "movie") {
+    url = "https://www.vidking.net/embed/movie/" + tmdb
+  } else {
 
-    if (type === "movie") {
+    const parts = id.split(":")
+    const season = parts[1]
+    const episode = parts[2]
 
-        streamUrl = `https://www.vidking.net/embed/movie/${tmdbId}`
+    url =
+      "https://www.vidking.net/embed/tv/" +
+      tmdb +
+      "/" +
+      season +
+      "/" +
+      episode
+  }
 
-    } else {
-
-        const parts = id.split(":")
-        const season = parts[1]
-        const episode = parts[2]
-
-        streamUrl = `https://www.vidking.net/embed/tv/${tmdbId}/${season}/${episode}`
-
-    }
-
-    return {
-        streams: [
-            {
-                title: "Cineby (Vidking)",
-                url: streamUrl
-            }
-        ]
-    }
-
+  return {
+    streams: [
+      {
+        title: "Cineby (Vidking)",
+        url: url
+      }
+    ]
+  }
 })
 
-const addonInterface = builder.getInterface()
+const port = process.env.PORT || 7000
 
-serveHTTP(addonInterface, { port: process.env.PORT || 7000 })
+http
+  .createServer(builder.getInterface())
+  .listen(port, () => {
+    console.log("Addon running on port " + port)
+  })
