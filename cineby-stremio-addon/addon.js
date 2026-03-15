@@ -2,7 +2,7 @@ const { addonBuilder } = require("stremio-addon-sdk")
 const https = require("https")
 const manifest = require("./manifest.json")
 
-const TMDB_API_KEY = "UJL9E8CG8JNUEKJNJD7BEBNNJGPPVGEL"
+const TMDB_API_KEY = "e4598ac9cb6d28883dac12852c670c5a"
 
 const builder = new addonBuilder(manifest)
 
