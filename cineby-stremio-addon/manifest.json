@@ -3,11 +3,18 @@
   "version": "1.0.0",
   "name": "Cineby",
   "description": "Cineby streams via Vidking",
-  "logo": "https://www.stremio.com/website/stremio-logo-small.png",
-  "contactEmail": "cineby@example.com",
-  "resources": ["stream"],
-  "types": ["movie", "series"],
-  "idPrefixes": ["tt"],
+  "logo": "https://cineby.app/logo.png",
+  "resources": [
+    "stream",
+    "meta"
+  ],
+  "types": [
+    "movie",
+    "series"
+  ],
+  "idPrefixes": [
+    "tt"
+  ],
   "catalogs": [],
   "behaviorHints": {
     "configurable": false
